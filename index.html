@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ARENA PREMIUM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --radius: 16px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0; padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* Header Navigation */
+        .header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            padding: 15px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 100;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .menu-icon {
+            width: 30px; height: 30px; display: flex; flex-direction: column; 
+            justify-content: center; gap: 6px; cursor: pointer;
+        }
+        .menu-icon span { height: 2px; width: 100%; background: var(--text-main); border-radius: 2px; transition: 0.3s; }
+
+        .brand { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -0.5px; }
+
+        /* Sidebar Menu */
+        .sidebar {
+            position: fixed; top: 0; left: -100%; width: 300px; height: 100%;
+            background: var(--card); z-index: 1000; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 40px 24px; box-shadow: 25px 0 50px rgba(0,0,0,0.1);
+        }
+        .sidebar.active { left: 0; }
+        .sidebar-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3); backdrop-filter: blur(4px);
+            display: none; z-index: 999; animation: fadeIn 0.3s;
+        }
+
+        .menu-list { display: flex; flex-direction: column; gap: 10px; margin-top: 30px; }
+        .menu-btn {
+            background: #f1f5f9; border: none; padding: 16px; border-radius: 12px;
+            text-align: left; font-weight: 600; color: var(--text-main);
+            cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.2s;
+        }
+        .menu-btn:active { transform: scale(0.97); background: #e2e8f0; }
+
+        /* Dashboard */
+        .container { padding: 20px; max-width: 500px; margin: auto; animation: slideIn 0.6s; }
+
+        .balance-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            padding: 30px; border-radius: 24px; color: #fff;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            margin-bottom: 24px; position: relative; overflow: hidden;
+        }
+        .balance-card::after {
+            content: ''; position: absolute; top: -50%; right: -50%; width: 100%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        }
+
+        .label-light { font-size: 12px; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 1px; }
+        .amount-main { font-family: 'Outfit', sans-serif; font-size: 34px; margin-top: 10px; font-weight: 700; }
+
+        /* Input */
+        .action-card {
+            background: var(--card); padding: 20px; border-radius: var(--radius);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 24px;
+        }
+        input {
+            width: 100%; border: 2px solid #f1f5f9; background: #f8fafc;
+            padding: 16px; border-radius: 12px; font-size: 18px; outline: none;
+            font-weight: 600; text-align: center; transition: 0.3s; color: var(--text-main);
+        }
+        input:focus { border-color: var(--primary); background: #fff; }
+
+        .btn-primary {
+            width: 100%; background: var(--primary); color: #fff; border: none;
+            padding: 16px; border-radius: 12px; margin-top: 15px;
+            font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.3s;
+        }
+        .btn-primary:active { transform: scale(0.96); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.2); }
+
+        /* Laga Cards */
+        .laga-item {
+            background: var(--card); border-radius: var(--radius); padding: 20px;
+            margin-bottom: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.02); animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .laga-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .laga-id { font-size: 11px; font-weight: 800; color: var(--primary); background: #eef2ff; padding: 4px 10px; border-radius: 20px; }
+        .laga-val { font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 700; }
+
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn-opt { padding: 14px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; font-size: 13px; }
+        .btn-win { background: var(--success); color: #fff; }
+        .btn-lose { background: #fee2e2; color: var(--danger); }
+
+        /* Modal Custom */
+        .modal-wrap {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px);
+            display: none; justify-content: center; align-items: flex-end; z-index: 2000;
+        }
+        .modal-body {
+            background: #fff; width: 100%; max-width: 500px; padding: 30px;
+            border-top-left-radius: 30px; border-top-right-radius: 30px;
+            animation: slideUp 0.4s cubic-bezier(0, 0.55, 0.45, 1);
+        }
+
+        /* Logs */
+        .logs-section { margin-top: 30px; }
+        .log-row {
+            display: flex; justify-content: space-between; padding: 15px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes pop { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+    <div id="overlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
+
+    <div id="sidebar" class="sidebar">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="brand">Control Panel</div>
+            <div onclick="toggleMenu()" style="font-weight: 800; cursor: pointer; color: var(--text-sub);">CLOSE</div>
+        </div>
+        <div class="menu-list">
+            <button class="menu-btn" onclick="openAction('EDIT')">Edit Saldo Utama</button>
+            <button class="menu-btn" onclick="openAction('PLUS')">Tambah Saldo (+)</button>
+            <button class="menu-btn" onclick="openAction('MIN')">Kurangi Saldo (-)</button>
+            <button class="menu-btn" onclick="copyLog()">Copy Rekap Data</button>
+            <button class="menu-btn" style="color: var(--danger); background: #fff1f2;" onclick="clearData()">Reset System</button>
+        </div>
+    </div>
+
+    <header class="header">
+        <div class="menu-icon" onclick="toggleMenu()">
+            <span></span><span></span><span></span>
+        </div>
+        <div class="brand">ARENA SYSTEM</div>
+        <div style="width: 30px;"></div>
+    </header>
+
+    <div class="container">
+        <div class="balance-card">
+            <div class="label-light" style="color: #94a3b8;">Total Saldo</div>
+            <div id="saldoDisplay" class="amount-main">Rp 0</div>
+        </div>
+
+        <div class="action-card">
+            <input type="number" id="pikInput" placeholder="Masukkan Nominal Pik" inputmode="numeric">
+            <button class="btn-primary" onclick="addLaga()">PROSES LAGA BARU</button>
+        </div>
+
+        <div id="lagaContainer"></div>
+
+        <div class="logs-section">
+            <div class="label-light">Riwayat Aktivitas</div>
+            <div id="historyBox"></div>
+        </div>
+    </div>
+
+    <div id="modalWrap" class="modal-wrap">
+        <div class="modal-body">
+            <div id="modalTitle" class="label-light" style="margin-bottom: 15px; color: var(--primary);">TITLE</div>
+            <input type="number" id="modalInput" style="margin-bottom: 20px;">
+            <div class="btn-group">
+                <button class="btn-opt" style="background: #f1f5f9;" onclick="closeModal()">BATAL</button>
+                <button id="modalConfirmBtn" class="btn-opt btn-win" style="background: var(--primary);">SIMPAN</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let state = { saldo: 0, activeLagas: [], logs: [] };
+    let currentIdx = null;
+
+    window.onload = () => {
+        const saved = localStorage.getItem('arena_premium_v7');
+        if (saved) { state = JSON.parse(saved); render(); }
+    };
+
+    function save() { localStorage.setItem('arena_premium_v7', JSON.stringify(state)); }
+
+    function toggleMenu() {
+        document.getElementById('sidebar').classList.toggle('active');
+        const overlay = document.getElementById('overlay');
+        overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function render() {
+        document.getElementById('saldoDisplay').innerText = "Rp " + state.saldo.toLocaleString('id-ID');
+        const container = document.getElementById('lagaContainer');
+        container.innerHTML = '';
+
+        state.activeLagas.forEach((laga, i) => {
+            const div = document.createElement('div');
+            div.className = 'laga-item';
+            div.innerHTML = `
+                <div class="laga-info">
+                    <span class="laga-id">LAGA ACTIVE #${i+1}</span>
+                    <span onclick="cancelLaga(${i})" style="color: var(--text-sub); font-size: 11px; cursor: pointer; font-weight: 700;">CANCEL</span>
+                </div>
+                <div class="laga-val">Rp ${laga.pik.toLocaleString('id-ID')}</div>
+                <div class="btn-group" style="margin-top: 20px;">
+                    <button class="btn-opt btn-win" onclick="openWinModal(${i})">REPORT WIN</button>
+                    <button class="btn-opt btn-lose" onclick="processLose(${i})">REPORT LOSE</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+
+        const hist = document.getElementById('historyBox');
+        hist.innerHTML = '';
+        state.logs.forEach(l => {
+            const isWin = l.res === 'WIN';
+            hist.innerHTML += `
+                <div class="log-row">
+                    <div>
+                        <div style="font-size: 10px; color: #94a3b8;">${l.time}</div>
+                        <div style="font-weight: 700; color: ${isWin ? 'var(--success)' : 'var(--danger)'}">${l.res}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: 700;">${isWin?'+':'-'}${l.amt.toLocaleString()}</div>
+                        <div style="font-size: 10px; color: #94a3b8;">Pik: ${l.pik.toLocaleString()}</div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function addLaga() {
+        const v = parseInt(document.getElementById('pikInput').value);
+        if(!v) return;
+        state.activeLagas.push({ pik: v });
+        document.getElementById('pikInput').value = '';
+        save(); render();
+    }
+
+    function cancelLaga(i) {
+        if(confirm("Batalkan data laga ini?")) { state.activeLagas.splice(i,1); save(); render(); }
+    }
+
+    function openWinModal(i) {
+        currentIdx = i;
+        const pik = state.activeLagas[i].pik;
+        document.getElementById('modalWrap').style.display = 'flex';
+        document.getElementById('modalTitle').innerText = "NOMINAL WIN (TOTAL MASUK)";
+        document.getElementById('modalInput').value = pik * 2;
+        document.getElementById('modalConfirmBtn').onclick = () => {
+            const val = parseInt(document.getElementById('modalInput').value);
+            state.saldo += val;
+            addLog('WIN', pik, val);
+            state.activeLagas.splice(currentIdx, 1);
+            closeModal(); save(); render();
+        };
+    }
+
+    function processLose(i) {
+        const pik = state.activeLagas[i].pik;
+        state.saldo -= pik;
+        addLog('LOSE', pik, pik);
+        state.activeLagas.splice(i, 1);
+        save(); render();
+    }
+
+    function openAction(mode) {
+        toggleMenu();
+        document.getElementById('modalWrap').style.display = 'flex';
+        const input = document.getElementById('modalInput');
+        const title = document.getElementById('modalTitle');
+        input.value = '';
+
+        if(mode === 'EDIT') {
+            title.innerText = "EDIT SALDO UTAMA";
+            input.value = state.saldo;
+            document.getElementById('modalConfirmBtn').onclick = () => {
+                state.saldo = parseInt(input.value) || 0;
+                closeModal(); save(); render();
+            };
+        } else if(mode === 'PLUS') {
+            title.innerText = "TAMBAH SALDO (+)";
+            document.getElementById('modalConfirmBtn').onclick = () => {
+                state.saldo += parseInt(input.value) || 0;
+                closeModal(); save(); render();
+            };
+        } else if(mode === 'MIN') {
+            title.innerText = "KURANGI SALDO (-)";
+            document.getElementById('modalConfirmBtn').onclick = () => {
+                state.saldo -= parseInt(input.value) || 0;
+                closeModal(); save(); render();
+            };
+        }
+    }
+
+    function closeModal() { document.getElementById('modalWrap').style.display = 'none'; }
+
+    function addLog(res, pik, amt) {
+        const now = new Date();
+        state.logs.unshift({
+            time: now.getHours().toString().padStart(2,'0')+":"+now.getMinutes().toString().padStart(2,'0'),
+            res, pik, amt
+        });
+    }
+
+    function copyLog() {
+        let txt = `REKAP ARENA | SALDO: Rp ${state.saldo.toLocaleString()}\n\n`;
+        state.logs.forEach(l => txt += `[${l.time}] ${l.res} | Pik: ${l.pik} | ${l.res==='WIN'?'+':'-'}${l.amt}\n`);
+        navigator.clipboard.writeText(txt); toggleMenu(); alert("Rekap telah disalin!");
+    }
+
+    function clearData() { if(confirm("Reset semua data?")) { state = { saldo: 0, activeLagas: [], logs: [] }; save(); location.reload(); } }
+</script>
+</body>
+</html>
