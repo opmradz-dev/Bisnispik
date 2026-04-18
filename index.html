@@ -27,6 +27,20 @@
             overflow-x: hidden;
         }
 
+        /* --- LOADING ANIMATION --- */
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); z-index: 9999; display: flex;
+            justify-content: center; align-items: center; flex-direction: column;
+            transition: opacity 0.5s ease;
+        }
+        .spinner {
+            width: 50px; height: 50px; border: 5px solid #e2e8f0;
+            border-top-color: var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
         /* Header Navigation */
         .header {
             background: rgba(255, 255, 255, 0.8);
@@ -118,6 +132,7 @@
         .btn-opt { padding: 14px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; font-size: 13px; }
         .btn-win { background: var(--success); color: #fff; }
         .btn-lose { background: #fee2e2; color: var(--danger); }
+        .btn-del-history { background: #fee2e2; color: var(--danger); border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 11px; }
 
         /* Modal Custom */
         .modal-wrap {
@@ -141,9 +156,33 @@
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes pop { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-    </style>
+    
+/* --- LOADING ANIMATION --- */
+#loader {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--bg); z-index: 9999; display: flex;
+    justify-content: center; align-items: center; flex-direction: column;
+    transition: opacity 0.5s ease;
+}
+.spinner {
+    width: 50px; /* Lebar lingkaran */
+    height: 50px; /* Tinggi lingkaran */
+    border: 5px solid #e2e8f0; /* Warna garis abu-abu */
+    border-top-color: var(--primary); /* Warna garis putar (biru) */
+    border-radius: 50%;
+    animation: spin 1s linear infinite; /* Kecepatan putaran */
+}
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+
+</style>
 </head>
 <body>
+
+    <div id="loader">
+        <div class="spinner"></div>
+        <div style="margin-top: 15px; font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--text-main); font-size: 14px; letter-spacing: 1px;">MEMUAT ARENA...</div>
+    </div>
 
     <div id="overlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
 
@@ -157,6 +196,7 @@
             <button class="menu-btn" onclick="openAction('PLUS')">Tambah Saldo (+)</button>
             <button class="menu-btn" onclick="openAction('MIN')">Kurangi Saldo (-)</button>
             <button class="menu-btn" onclick="copyLog()">Copy Rekap Data</button>
+            <button class="menu-btn" onclick="openDeleteHistory()">Hapus Riwayat</button>
             <button class="menu-btn" style="color: var(--danger); background: #fff1f2;" onclick="clearData()">Reset System</button>
         </div>
     </div>
@@ -165,7 +205,7 @@
         <div class="menu-icon" onclick="toggleMenu()">
             <span></span><span></span><span></span>
         </div>
-        <div class="brand">ARENA SYSTEM</div>
+        <div class="brand">CATPIK</div>
         <div style="width: 30px;"></div>
     </header>
 
@@ -200,13 +240,30 @@
         </div>
     </div>
 
+    <div id="historyModalWrap" class="modal-wrap">
+        <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
+            <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 20px;">
+                <div class="label-light" style="color: var(--danger);">HAPUS RIWAYAT</div>
+                <div onclick="closeHistoryModal()" style="font-weight: 800; cursor: pointer; color: var(--text-sub); font-size:12px;">TUTUP</div>
+            </div>
+            <div id="historyDeleteList"></div>
+        </div>
+    </div>
+
 <script>
     let state = { saldo: 0, activeLagas: [], logs: [] };
     let currentIdx = null;
 
+    // Loading Screen Logic
     window.onload = () => {
         const saved = localStorage.getItem('arena_premium_v8');
         if (saved) { state = JSON.parse(saved); render(); }
+        
+        setTimeout(() => {
+            const loader = document.getElementById('loader');
+            loader.style.opacity = '0';
+            setTimeout(() => { loader.style.display = 'none'; }, 500);
+        }, 800); // Loader akan tampil selama 0.8 detik
     };
 
     function save() { localStorage.setItem('arena_premium_v8', JSON.stringify(state)); }
@@ -265,8 +322,10 @@
         const v = parseInt(document.getElementById('pikInput').value);
         if(!v) return;
         
-        // Default name if left blank
         const lagaName = n !== "" ? n : `Laga #${state.activeLagas.length + 1}`;
+        
+        // POTONG SALDO SECARA LANGSUNG SAAT PIK
+        state.saldo -= v;
         
         state.activeLagas.push({ name: lagaName, pik: v });
         document.getElementById('nameInput').value = '';
@@ -275,7 +334,9 @@
     }
 
     function cancelLaga(i) {
-        if(confirm(`Batalkan data ${state.activeLagas[i].name}?`)) { 
+        if(confirm(`Batalkan data ${state.activeLagas[i].name}? Saldo akan dikembalikan.`)) { 
+            // KEMBALIKAN SALDO JIKA DICANCEL
+            state.saldo += state.activeLagas[i].pik;
             state.activeLagas.splice(i,1); 
             save(); render(); 
         }
@@ -290,6 +351,7 @@
         document.getElementById('modalConfirmBtn').onclick = () => {
             const val = parseInt(document.getElementById('modalInput').value);
             const name = state.activeLagas[currentIdx].name;
+            // Karena saldo sudah dikurangi saat addLaga, kita langsung tambahkan total Win ke saldo
             state.saldo += val;
             addLog('WIN', pik, val, name);
             state.activeLagas.splice(currentIdx, 1);
@@ -300,7 +362,8 @@
     function processLose(i) {
         const pik = state.activeLagas[i].pik;
         const name = state.activeLagas[i].name;
-        state.saldo -= pik;
+        
+        // SALDO TIDAK DIPOTONG LAGI KARENA SUDAH DIPOTONG DI AWAL (addLaga)
         addLog('LOSE', pik, pik, name);
         state.activeLagas.splice(i, 1);
         save(); render();
@@ -349,6 +412,49 @@
             time: now.getHours().toString().padStart(2,'0')+":"+now.getMinutes().toString().padStart(2,'0'),
             res, pik, amt, name
         });
+    }
+
+    // --- LOGIC HAPUS RIWAYAT SPESIFIK ---
+    function openDeleteHistory() {
+        toggleMenu();
+        renderDeleteHistory();
+        document.getElementById('historyModalWrap').style.display = 'flex';
+    }
+
+    function closeHistoryModal() {
+        document.getElementById('historyModalWrap').style.display = 'none';
+    }
+
+    function renderDeleteHistory() {
+        const list = document.getElementById('historyDeleteList');
+        list.innerHTML = '';
+        if(state.logs.length === 0) {
+            list.innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size: 14px; margin-top: 20px;">Riwayat saat ini kosong.</div>';
+            return;
+        }
+        state.logs.forEach((l, i) => {
+            const isWin = l.res === 'WIN';
+            list.innerHTML += `
+                <div class="log-row" style="align-items:center;">
+                    <div>
+                        <div style="font-size: 10px; color: #94a3b8;">${l.time}</div>
+                        <div style="font-weight: 700; color: ${isWin ? 'var(--success)' : (l.res === 'LOSE' ? 'var(--danger)' : 'var(--text-main)')}">
+                            ${l.res} ${l.name ? '- ' + l.name : ''}
+                        </div>
+                    </div>
+                    <button class="btn-del-history" onclick="deleteSingleLog(${i})">HAPUS</button>
+                </div>
+            `;
+        });
+    }
+
+    function deleteSingleLog(index) {
+        if(confirm("Apakah kamu yakin ingin menghapus riwayat ini? (Saldo tidak akan berubah)")) {
+            state.logs.splice(index, 1);
+            save(); 
+            render(); 
+            renderDeleteHistory(); // Render ulang list di dalam modal
+        }
     }
 
     function copyLog() {
