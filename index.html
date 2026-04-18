@@ -92,12 +92,14 @@
             width: 100%; border: 2px solid #f1f5f9; background: #f8fafc;
             padding: 16px; border-radius: 12px; font-size: 18px; outline: none;
             font-weight: 600; text-align: center; transition: 0.3s; color: var(--text-main);
+            margin-bottom: 10px;
         }
+        input::placeholder { font-size: 14px; font-weight: 500; }
         input:focus { border-color: var(--primary); background: #fff; }
 
         .btn-primary {
             width: 100%; background: var(--primary); color: #fff; border: none;
-            padding: 16px; border-radius: 12px; margin-top: 15px;
+            padding: 16px; border-radius: 12px; margin-top: 5px;
             font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.3s;
         }
         .btn-primary:active { transform: scale(0.96); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.2); }
@@ -109,7 +111,7 @@
             border: 1px solid rgba(0,0,0,0.02); animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .laga-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .laga-id { font-size: 11px; font-weight: 800; color: var(--primary); background: #eef2ff; padding: 4px 10px; border-radius: 20px; }
+        .laga-id { font-size: 11px; font-weight: 800; color: var(--primary); background: #eef2ff; padding: 6px 12px; border-radius: 20px; text-transform: uppercase;}
         .laga-val { font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 700; }
 
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -174,6 +176,7 @@
         </div>
 
         <div class="action-card">
+            <input type="text" id="nameInput" placeholder="Nama Laga / Pemain (Cth: Laga 1)" autocomplete="off">
             <input type="number" id="pikInput" placeholder="Masukkan Nominal Pik" inputmode="numeric">
             <button class="btn-primary" onclick="addLaga()">PROSES LAGA BARU</button>
         </div>
@@ -202,11 +205,11 @@
     let currentIdx = null;
 
     window.onload = () => {
-        const saved = localStorage.getItem('arena_premium_v7');
+        const saved = localStorage.getItem('arena_premium_v8');
         if (saved) { state = JSON.parse(saved); render(); }
     };
 
-    function save() { localStorage.setItem('arena_premium_v7', JSON.stringify(state)); }
+    function save() { localStorage.setItem('arena_premium_v8', JSON.stringify(state)); }
 
     function toggleMenu() {
         document.getElementById('sidebar').classList.toggle('active');
@@ -224,7 +227,7 @@
             div.className = 'laga-item';
             div.innerHTML = `
                 <div class="laga-info">
-                    <span class="laga-id">LAGA ACTIVE #${i+1}</span>
+                    <span class="laga-id">${laga.name}</span>
                     <span onclick="cancelLaga(${i})" style="color: var(--text-sub); font-size: 11px; cursor: pointer; font-weight: 700;">CANCEL</span>
                 </div>
                 <div class="laga-val">Rp ${laga.pik.toLocaleString('id-ID')}</div>
@@ -244,11 +247,13 @@
                 <div class="log-row">
                     <div>
                         <div style="font-size: 10px; color: #94a3b8;">${l.time}</div>
-                        <div style="font-weight: 700; color: ${isWin ? 'var(--success)' : 'var(--danger)'}">${l.res}</div>
+                        <div style="font-weight: 700; color: ${isWin ? 'var(--success)' : (l.res === 'LOSE' ? 'var(--danger)' : 'var(--text-main)')}">
+                            ${l.res} ${l.name ? '- ' + l.name : ''}
+                        </div>
                     </div>
                     <div style="text-align: right;">
-                        <div style="font-weight: 700;">${isWin?'+':'-'}${l.amt.toLocaleString()}</div>
-                        <div style="font-size: 10px; color: #94a3b8;">Pik: ${l.pik.toLocaleString()}</div>
+                        <div style="font-weight: 700;">${isWin?'+':(l.res==='LOSE'?'-':'')}${l.amt.toLocaleString('id-ID')}</div>
+                        ${l.pik ? `<div style="font-size: 10px; color: #94a3b8;">Pik: ${l.pik.toLocaleString('id-ID')}</div>` : ''}
                     </div>
                 </div>
             `;
@@ -256,27 +261,37 @@
     }
 
     function addLaga() {
+        const n = document.getElementById('nameInput').value.trim();
         const v = parseInt(document.getElementById('pikInput').value);
         if(!v) return;
-        state.activeLagas.push({ pik: v });
+        
+        // Default name if left blank
+        const lagaName = n !== "" ? n : `Laga #${state.activeLagas.length + 1}`;
+        
+        state.activeLagas.push({ name: lagaName, pik: v });
+        document.getElementById('nameInput').value = '';
         document.getElementById('pikInput').value = '';
         save(); render();
     }
 
     function cancelLaga(i) {
-        if(confirm("Batalkan data laga ini?")) { state.activeLagas.splice(i,1); save(); render(); }
+        if(confirm(`Batalkan data ${state.activeLagas[i].name}?`)) { 
+            state.activeLagas.splice(i,1); 
+            save(); render(); 
+        }
     }
 
     function openWinModal(i) {
         currentIdx = i;
         const pik = state.activeLagas[i].pik;
         document.getElementById('modalWrap').style.display = 'flex';
-        document.getElementById('modalTitle').innerText = "NOMINAL WIN (TOTAL MASUK)";
+        document.getElementById('modalTitle').innerText = `NOMINAL WIN (${state.activeLagas[i].name})`;
         document.getElementById('modalInput').value = pik * 2;
         document.getElementById('modalConfirmBtn').onclick = () => {
             const val = parseInt(document.getElementById('modalInput').value);
+            const name = state.activeLagas[currentIdx].name;
             state.saldo += val;
-            addLog('WIN', pik, val);
+            addLog('WIN', pik, val, name);
             state.activeLagas.splice(currentIdx, 1);
             closeModal(); save(); render();
         };
@@ -284,8 +299,9 @@
 
     function processLose(i) {
         const pik = state.activeLagas[i].pik;
+        const name = state.activeLagas[i].name;
         state.saldo -= pik;
-        addLog('LOSE', pik, pik);
+        addLog('LOSE', pik, pik, name);
         state.activeLagas.splice(i, 1);
         save(); render();
     }
@@ -301,19 +317,25 @@
             title.innerText = "EDIT SALDO UTAMA";
             input.value = state.saldo;
             document.getElementById('modalConfirmBtn').onclick = () => {
+                const oldSaldo = state.saldo;
                 state.saldo = parseInt(input.value) || 0;
+                addLog('EDIT SALDO', 0, state.saldo - oldSaldo, 'Sistem');
                 closeModal(); save(); render();
             };
         } else if(mode === 'PLUS') {
             title.innerText = "TAMBAH SALDO (+)";
             document.getElementById('modalConfirmBtn').onclick = () => {
-                state.saldo += parseInt(input.value) || 0;
+                const val = parseInt(input.value) || 0;
+                state.saldo += val;
+                addLog('TAMBAH SALDO', 0, val, 'Manual');
                 closeModal(); save(); render();
             };
         } else if(mode === 'MIN') {
             title.innerText = "KURANGI SALDO (-)";
             document.getElementById('modalConfirmBtn').onclick = () => {
-                state.saldo -= parseInt(input.value) || 0;
+                const val = parseInt(input.value) || 0;
+                state.saldo -= val;
+                addLog('KURANGI SALDO', 0, -val, 'Manual');
                 closeModal(); save(); render();
             };
         }
@@ -321,21 +343,31 @@
 
     function closeModal() { document.getElementById('modalWrap').style.display = 'none'; }
 
-    function addLog(res, pik, amt) {
+    function addLog(res, pik, amt, name = '') {
         const now = new Date();
         state.logs.unshift({
             time: now.getHours().toString().padStart(2,'0')+":"+now.getMinutes().toString().padStart(2,'0'),
-            res, pik, amt
+            res, pik, amt, name
         });
     }
 
     function copyLog() {
-        let txt = `REKAP ARENA | SALDO: Rp ${state.saldo.toLocaleString()}\n\n`;
-        state.logs.forEach(l => txt += `[${l.time}] ${l.res} | Pik: ${l.pik} | ${l.res==='WIN'?'+':'-'}${l.amt}\n`);
+        let txt = `REKAP ARENA | SALDO: Rp ${state.saldo.toLocaleString('id-ID')}\n\n`;
+        state.logs.forEach(l => {
+            const operator = l.res === 'WIN' || l.amt > 0 ? '+' : (l.res === 'LOSE' || l.amt < 0 ? '-' : '');
+            const amtClean = Math.abs(l.amt);
+            const pikText = l.pik ? ` | Pik: ${l.pik.toLocaleString('id-ID')}` : '';
+            txt += `[${l.time}] ${l.res} ${l.name ? '('+l.name+')' : ''}${pikText} | ${operator}${amtClean.toLocaleString('id-ID')}\n`;
+        });
         navigator.clipboard.writeText(txt); toggleMenu(); alert("Rekap telah disalin!");
     }
 
-    function clearData() { if(confirm("Reset semua data?")) { state = { saldo: 0, activeLagas: [], logs: [] }; save(); location.reload(); } }
+    function clearData() { 
+        if(confirm("Reset semua data?")) { 
+            state = { saldo: 0, activeLagas: [], logs: [] }; 
+            save(); location.reload(); 
+        } 
+    }
 </script>
 </body>
 </html>
