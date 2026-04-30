@@ -3,155 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Heart Rate Monitor Asli</title>
+    <title>HeartRate Pro v2</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; margin: 0; padding: 20px; }
-        .container { max-width: 400px; margin: auto; }
-        #video { display: none; } /* Sembunyikan preview kamera */
-        #canvas { display: none; } 
+        :root { --primary: #ff4757; --bg: #121212; --card: #1e1e1e; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; margin: 0; padding: 15px; }
         
-        .bpm-display {
-            font-size: 5rem;
-            font-weight: bold;
-            color: #ff4757;
-            margin: 20px 0;
-            text-shadow: 0 0 20px rgba(255, 71, 87, 0.5);
-        }
+        .container { max-width: 450px; margin: auto; }
         
-        .guide {
-            background: #2f3542;
-            padding: 15px;
-            border-radius: 15px;
-            font-size: 0.9rem;
-            line-height: 1.5;
+        /* Card Utama */
+        .main-card {
+            background: var(--card);
+            border-radius: 25px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
         }
 
-        .status-dot {
-            height: 15px;
-            width: 15px;
-            background-color: #bbb;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 10px;
-        }
+        .bpm-value { font-size: 5rem; font-weight: 800; color: var(--primary); margin: 10px 0; }
+        
+        /* Grafik Area */
+        .chart-container { background: #000; border-radius: 15px; padding: 10px; margin: 15px 0; height: 120px; }
 
-        .active { background-color: #ff4757; animation: blink 1s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        /* Grid Statistik */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .stat-box { background: var(--card); padding: 15px; border-radius: 15px; text-align: left; border: 1px solid #333; }
+        .stat-box small { color: #888; font-size: 0.75rem; }
+        .stat-box div { font-weight: bold; margin-top: 5px; }
 
+        /* Status & Button */
+        .status-bar { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 15px; font-size: 0.9rem; }
+        .dot { width: 10px; height: 10px; background: #444; border-radius: 50%; }
+        .active-dot { background: var(--primary); box-shadow: 0 0 10px var(--primary); animation: pulse 1s infinite; }
+        
         button {
-            background: #ff4757;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 30px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            margin-top: 20px;
+            width: 100%; background: var(--primary); color: white; border: none; 
+            padding: 18px; border-radius: 15px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
         }
+
+        #video, #canvas { display: none; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Heart Rate Monitor</h2>
-    <div class="guide" id="instruction">
-        Tekan tombol di bawah dan tempelkan ujung jari Anda hingga <b>menutupi seluruh lensa kamera belakang</b>.
+    <h3 style="text-align: center; color: #888;">HEART RATE MONITOR</h3>
+
+    <div class="main-card">
+        <div class="status-bar">
+            <div id="dot" class="dot"></div>
+            <span id="statusText">Sensor Siap</span>
+        </div>
+        
+        <div class="bpm-value" id="bpm">--</div>
+        <div style="color: #888; letter-spacing: 2px;">BEATS PER MINUTE</div>
+
+        <div class="chart-container">
+            <canvas id="liveChart"></canvas>
+        </div>
     </div>
 
-    <div class="bpm-display" id="bpm">--</div>
-    <div>BPM</div>
-
-    <div style="margin-top: 20px;">
-        <span id="dot" class="status-dot"></span>
-        <span id="statusText">Sensor Mati</span>
+    <div class="stats-grid">
+        <div class="stat-box">
+            <small>KUALITAS SINYAL</small>
+            <div id="signal">Menunggu...</div>
+        </div>
+        <div class="stat-box">
+            <small>KATEGORI</small>
+            <div id="category">-</div>
+        </div>
     </div>
 
-    <button id="startBtn">Mulai Sensor</button>
+    <button id="startBtn">MULAI SCAN JARI</button>
 
     <video id="video" autoplay playsinline></video>
-    <canvas id="canvas" width="100" height="100"></canvas>
+    <canvas id="canvas" width="50" height="50"></canvas>
+
+    <div style="margin-top: 25px; font-size: 0.8rem; color: #555; text-align: center;">
+        Pastikan jari menutupi kamera sepenuhnya dan gunakan di tempat terang.
+    </div>
 </div>
 
 <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    const bpmDisplay = document.getElementById('bpm');
+    const ctx = canvas.getContext('2d', {willReadFrequently: true});
+    const bpmText = document.getElementById('bpm');
     const startBtn = document.getElementById('startBtn');
-    const statusText = document.getElementById('statusText');
-    const dot = document.getElementById('dot');
-
-    let isMeasuring = false;
-    let heartRates = [];
-    let lastValue = 0;
+    
+    let isRunning = false;
+    let dataPoints = Array(30).fill(0);
     let peaks = [];
 
-    startBtn.addEventListener('click', async () => {
-        if (isMeasuring) return;
-        
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment' }, // Gunakan kamera belakang
-                audio: false
-            });
-            
-            video.srcObject = stream;
-            isMeasuring = true;
-            startBtn.style.display = 'none';
-            statusText.innerText = "Menganalisa Aliran Darah...";
-            dot.classList.add('active');
-
-            processFrame();
-        } catch (err) {
-            alert("Gagal mengakses kamera. Pastikan menggunakan HTTPS dan memberi izin kamera.");
+    // Setup Chart
+    const chartCtx = document.getElementById('liveChart').getContext('2d');
+    const chart = new Chart(chartCtx, {
+        type: 'line',
+        data: {
+            labels: dataPoints.map((_, i) => i),
+            datasets: [{
+                data: dataPoints,
+                borderColor: '#ff4757',
+                borderWidth: 3,
+                tension: 0.4,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { x: { display: false }, y: { display: false } },
+            plugins: { legend: { display: false } }
         }
     });
 
-    function processFrame() {
-        if (!isMeasuring) return;
+    startBtn.onclick = async () => {
+        if(isRunning) return;
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            video.srcObject = stream;
+            isRunning = true;
+            document.getElementById('dot').classList.add('active-dot');
+            document.getElementById('statusText').innerText = "Menganalisa...";
+            startBtn.style.opacity = "0.5";
+            process();
+        } catch(e) { alert("Akses kamera ditolak."); }
+    };
 
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-
-        let rSum = 0;
-        // Ambil rata-rata nilai warna merah (Red channel)
-        for (let i = 0; i < data.length; i += 4) {
-            rSum += data[i];
-        }
+    function process() {
+        if(!isRunning) return;
+        ctx.drawImage(video, 0, 0, 50, 50);
+        const imgData = ctx.getImageData(0, 0, 50, 50).data;
         
-        const rAvg = rSum / (data.length / 4);
-        analyzePulse(rAvg);
+        let rSum = 0;
+        for(let i=0; i<imgData.length; i+=4) rSum += imgData[i];
+        let rAvg = rSum / (imgData.length/4);
 
-        requestAnimationFrame(processFrame);
+        // Update Grafik
+        dataPoints.push(rAvg);
+        dataPoints.shift();
+        chart.data.datasets[0].data = dataPoints;
+        chart.update('none');
+
+        // Deteksi Pulse
+        if(rAvg > 150) { // Cek apakah jari menempel (warna merah tinggi)
+            document.getElementById('signal').innerText = "BAGUS";
+            analyze(rAvg);
+        } else {
+            document.getElementById('signal').innerText = "LETAK JARI SALAH";
+        }
+
+        requestAnimationFrame(process);
     }
 
-    function analyzePulse(val) {
-        // Filter sederhana untuk mendeteksi puncak detak
-        if (val > lastValue && val > 150) { // Angka 150 asumsi jari menutupi kamera & terkena cahaya/flash
-            const now = Date.now();
-            if (peaks.length === 0 || now - peaks[peaks.length - 1] > 400) { // Limit 400ms antar detak (max 150 BPM)
-                peaks.push(now);
-            }
+    function analyze(val) {
+        const now = Date.now();
+        // Logika sederhana deteksi lonjakan
+        if(val > 180 && (peaks.length === 0 || now - peaks[peaks.length-1] > 450)) {
+            peaks.push(now);
         }
-        lastValue = val;
 
-        // Hitung BPM setiap 5 detik data terkumpul
-        if (peaks.length > 5) {
-            const first = peaks[0];
-            const last = peaks[peaks.length - 1];
-            const diff = (last - first) / 1000; // detik
-            const bpm = Math.round((peaks.length / diff) * 60);
-            
-            if (bpm > 40 && bpm < 180) {
-                bpmDisplay.innerText = bpm;
+        if(peaks.length > 5) {
+            const duration = (peaks[peaks.length-1] - peaks[0]) / 1000;
+            const bpm = Math.round((peaks.length / duration) * 60);
+            if(bpm > 45 && bpm < 160) {
+                bpmText.innerText = bpm;
+                updateCategory(bpm);
             }
-            
-            // Reset periodik agar data tetap baru
-            if (peaks.length > 20) peaks.shift();
+            if(peaks.length > 15) peaks.shift();
         }
+    }
+
+    function updateCategory(bpm) {
+        let cat = "Normal";
+        if(bpm > 100) cat = "Tinggi (Tachycadia)";
+        if(bpm < 60) cat = "Rendah (Bradycardia)";
+        document.getElementById('category').innerText = cat;
     }
 </script>
-
 </body>
 </html>
+
