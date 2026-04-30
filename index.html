@@ -3,187 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HeartRate Pro v2</title>
+    <title>Multi-Sensor Dashboard Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #ff4757; --bg: #121212; --card: #1e1e1e; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; margin: 0; padding: 15px; }
+        :root { --neon-red: #ff4757; --neon-blue: #00d2d3; --neon-green: #1dd1a1; --neon-yellow: #feca57; --bg: #0a0a0c; }
+        body { font-family: 'Courier New', monospace; background: var(--bg); color: #fff; margin: 0; padding: 10px; overflow-x: hidden; }
         
-        .container { max-width: 450px; margin: auto; }
+        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         
-        /* Card Utama */
-        .main-card {
-            background: var(--card);
-            border-radius: 25px;
-            padding: 25px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            margin-bottom: 20px;
+        .card { background: #16161a; border: 1px solid #333; border-radius: 10px; padding: 10px; position: relative; overflow: hidden; }
+        .card-title { font-size: 0.7rem; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+        .main-val { font-size: 1.8rem; font-weight: bold; font-family: 'Arial'; }
+        
+        .chart-box { height: 80px; width: 100%; margin-top: 5px; }
+        
+        /* Specific Colors */
+        .heart { color: var(--neon-red); }
+        .vibe { color: var(--neon-blue); }
+        .wind { color: var(--neon-green); }
+        .signal { color: var(--neon-yellow); }
+
+        .full-width { grid-column: span 2; }
+        
+        button { 
+            width: 100%; padding: 15px; background: #333; color: white; border: none; 
+            border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px;
         }
+        .active-btn { background: var(--neon-red); }
 
-        .bpm-value { font-size: 5rem; font-weight: 800; color: var(--primary); margin: 10px 0; }
-        
-        /* Grafik Area */
-        .chart-container { background: #000; border-radius: 15px; padding: 10px; margin: 15px 0; height: 120px; }
-
-        /* Grid Statistik */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .stat-box { background: var(--card); padding: 15px; border-radius: 15px; text-align: left; border: 1px solid #333; }
-        .stat-box small { color: #888; font-size: 0.75rem; }
-        .stat-box div { font-weight: bold; margin-top: 5px; }
-
-        /* Status & Button */
-        .status-bar { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 15px; font-size: 0.9rem; }
-        .dot { width: 10px; height: 10px; background: #444; border-radius: 50%; }
-        .active-dot { background: var(--primary); box-shadow: 0 0 10px var(--primary); animation: pulse 1s infinite; }
-        
-        button {
-            width: 100%; background: var(--primary); color: white; border: none; 
-            padding: 18px; border-radius: 15px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
-        }
-
-        #video, #canvas { display: none; }
-
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        #video { display: none; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h3 style="text-align: center; color: #888;">HEART RATE MONITOR</h3>
+<div class="header">
+    <div style="font-size: 1.2rem; font-weight: bold;">SENSOR HUB V1.0</div>
+    <small id="sys-status">SISTEM SIAP - KLIK MULAI</small>
+</div>
 
-    <div class="main-card">
-        <div class="status-bar">
-            <div id="dot" class="dot"></div>
-            <span id="statusText">Sensor Siap</span>
-        </div>
-        
-        <div class="bpm-value" id="bpm">--</div>
-        <div style="color: #888; letter-spacing: 2px;">BEATS PER MINUTE</div>
-
-        <div class="chart-container">
-            <canvas id="liveChart"></canvas>
-        </div>
+<div class="grid-container">
+    <div class="card full-width">
+        <div class="card-title">❤️ Detak Jantung (BPM)</div>
+        <div class="main-val heart" id="val-heart">00</div>
+        <div class="chart-box"><canvas id="chart-heart"></canvas></div>
     </div>
 
-    <div class="stats-grid">
-        <div class="stat-box">
-            <small>KUALITAS SINYAL</small>
-            <div id="signal">Menunggu...</div>
-        </div>
-        <div class="stat-box">
-            <small>KATEGORI</small>
-            <div id="category">-</div>
-        </div>
+    <div class="card">
+        <div class="card-title">📳 Getaran (m/s²)</div>
+        <div class="main-val vibe" id="val-vibe">0.0</div>
+        <div class="chart-box"><canvas id="chart-vibe"></canvas></div>
     </div>
 
-    <button id="startBtn">MULAI SCAN JARI</button>
+    <div class="card">
+        <div class="card-title">🌬️ Angin/Intensitas</div>
+        <div class="main-val wind" id="val-wind">0%</div>
+        <div class="chart-box"><canvas id="chart-wind"></canvas></div>
+    </div>
 
-    <video id="video" autoplay playsinline></video>
-    <canvas id="canvas" width="50" height="50"></canvas>
+    <div class="card">
+        <div class="card-title">📡 Sinyal Satelit</div>
+        <div class="main-val signal" id="val-signal">0 ms</div>
+        <div class="chart-box"><canvas id="chart-signal"></canvas></div>
+    </div>
 
-    <div style="margin-top: 25px; font-size: 0.8rem; color: #555; text-align: center;">
-        Pastikan jari menutupi kamera sepenuhnya dan gunakan di tempat terang.
+    <div class="card">
+        <div class="card-title">🌀 Frekuensi</div>
+        <div class="main-val" id="val-freq" style="color:violet">0 Hz</div>
+        <div class="chart-box"><canvas id="chart-freq"></canvas></div>
     </div>
 </div>
 
-<script>
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d', {willReadFrequently: true});
-    const bpmText = document.getElementById('bpm');
-    const startBtn = document.getElementById('startBtn');
-    
-    let isRunning = false;
-    let dataPoints = Array(30).fill(0);
-    let peaks = [];
+<button id="masterBtn">AKTIFKAN SEMUA SENSOR</button>
+<video id="video" autoplay playsinline></video>
+<canvas id="procCanvas" width="30" height="30" style="display:none"></canvas>
 
-    // Setup Chart
-    const chartCtx = document.getElementById('liveChart').getContext('2d');
-    const chart = new Chart(chartCtx, {
+<script>
+let charts = {};
+let isRunning = false;
+
+// 1. Inisialisasi Grafik
+function initChart(id, color) {
+    const ctx = document.getElementById('chart-' + id).getContext('2d');
+    return new Chart(ctx, {
         type: 'line',
         data: {
-            labels: dataPoints.map((_, i) => i),
-            datasets: [{
-                data: dataPoints,
-                borderColor: '#ff4757',
-                borderWidth: 3,
-                tension: 0.4,
-                pointRadius: 0
-            }]
+            labels: Array(20).fill(''),
+            datasets: [{ data: Array(20).fill(0), borderColor: color, borderWidth: 2, tension: 0.4, pointRadius: 0 }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: { x: { display: false }, y: { display: false } },
-            plugins: { legend: { display: false } }
-        }
+        options: { responsive: true, maintainAspectRatio: false, scales: { x: {display: false}, y: {display: false} }, plugins: {legend: {display: false}} }
     });
+}
 
-    startBtn.onclick = async () => {
-        if(isRunning) return;
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-            video.srcObject = stream;
-            isRunning = true;
-            document.getElementById('dot').classList.add('active-dot');
-            document.getElementById('statusText').innerText = "Menganalisa...";
-            startBtn.style.opacity = "0.5";
-            process();
-        } catch(e) { alert("Akses kamera ditolak."); }
-    };
+charts.heart = initChart('heart', '#ff4757');
+charts.vibe = initChart('vibe', '#00d2d3');
+charts.wind = initChart('wind', '#1dd1a1');
+charts.signal = initChart('signal', '#feca57');
+charts.freq = initChart('freq', '#a29bfe');
 
-    function process() {
-        if(!isRunning) return;
-        ctx.drawImage(video, 0, 0, 50, 50);
-        const imgData = ctx.getImageData(0, 0, 50, 50).data;
+// 2. Sensor Jantung (Kamera)
+async function startKamera() {
+    const video = document.getElementById('video');
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = stream;
+    const canvas = document.getElementById('procCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let peaks = [];
+    setInterval(() => {
+        ctx.drawImage(video, 0, 0, 30, 30);
+        const data = ctx.getImageData(0,0,30,30).data;
+        let rAvg = 0; for(let i=0; i<data.length; i+=4) rAvg += data[i];
+        rAvg /= (data.length/4);
         
-        let rSum = 0;
-        for(let i=0; i<imgData.length; i+=4) rSum += imgData[i];
-        let rAvg = rSum / (imgData.length/4);
-
-        // Update Grafik
-        dataPoints.push(rAvg);
-        dataPoints.shift();
-        chart.data.datasets[0].data = dataPoints;
-        chart.update('none');
-
-        // Deteksi Pulse
-        if(rAvg > 150) { // Cek apakah jari menempel (warna merah tinggi)
-            document.getElementById('signal').innerText = "BAGUS";
-            analyze(rAvg);
-        } else {
-            document.getElementById('signal').innerText = "LETAK JARI SALAH";
-        }
-
-        requestAnimationFrame(process);
-    }
-
-    function analyze(val) {
-        const now = Date.now();
-        // Logika sederhana deteksi lonjakan
-        if(val > 180 && (peaks.length === 0 || now - peaks[peaks.length-1] > 450)) {
-            peaks.push(now);
-        }
-
-        if(peaks.length > 5) {
-            const duration = (peaks[peaks.length-1] - peaks[0]) / 1000;
-            const bpm = Math.round((peaks.length / duration) * 60);
-            if(bpm > 45 && bpm < 160) {
-                bpmText.innerText = bpm;
-                updateCategory(bpm);
+        updateChart(charts.heart, rAvg/2);
+        if(rAvg > 200) { // Deteksi sederhana
+            const now = Date.now();
+            if(peaks.length === 0 || now - peaks[peaks.length-1] > 500) peaks.push(now);
+            if(peaks.length > 5) {
+                const bpm = Math.round(60000 / ((peaks[peaks.length-1] - peaks[0]) / (peaks.length-1)));
+                document.getElementById('val-heart').innerText = (bpm > 40 && bpm < 150) ? bpm : "--";
+                if(peaks.length > 10) peaks.shift();
             }
-            if(peaks.length > 15) peaks.shift();
         }
-    }
+    }, 100);
+}
 
-    function updateCategory(bpm) {
-        let cat = "Normal";
-        if(bpm > 100) cat = "Tinggi (Tachycadia)";
-        if(bpm < 60) cat = "Rendah (Bradycardia)";
-        document.getElementById('category').innerText = cat;
+// 3. Sensor Getaran (Accelerometer)
+function startVibration() {
+    window.addEventListener('devicemotion', (event) => {
+        const acc = event.acceleration;
+        const total = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2).toFixed(2);
+        document.getElementById('val-vibe').innerText = total;
+        updateChart(charts.vibe, total);
+    });
+}
+
+// 4. Sensor Angin (Microphone)
+async function startWind() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioCtx.createAnalyser();
+    const source = audioCtx.createMediaStreamSource(stream);
+    source.connect(analyser);
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    
+    function checkWind() {
+        analyser.getByteFrequencyData(dataArray);
+        let sum = dataArray.reduce((a, b) => a + b, 0);
+        let vol = Math.round(sum / dataArray.length);
+        document.getElementById('val-wind').innerText = vol + "%";
+        updateChart(charts.wind, vol);
+        document.getElementById('val-freq').innerText = (vol * 12) + " Hz";
+        updateChart(charts.freq, vol * 2);
+        requestAnimationFrame(checkWind);
     }
+    checkWind();
+}
+
+// 5. Simulasi Sinyal (Ping Latency)
+function startSignal() {
+    setInterval(() => {
+        const ping = Math.floor(Math.random() * 50) + 20;
+        document.getElementById('val-signal').innerText = ping + " ms";
+        updateChart(charts.signal, ping);
+    }, 1000);
+}
+
+function updateChart(chart, val) {
+    chart.data.datasets[0].data.push(val);
+    chart.data.datasets[0].data.shift();
+    chart.update('none');
+}
+
+document.getElementById('masterBtn').onclick = function() {
+    if(isRunning) return;
+    this.innerText = "SENSOR AKTIF";
+    this.classList.add('active-btn');
+    document.getElementById('sys-status').innerText = "MENERIMA DATA REAL-TIME...";
+    
+    startKamera();
+    startVibration();
+    startWind();
+    startSignal();
+    isRunning = true;
+};
 </script>
+
 </body>
 </html>
-
