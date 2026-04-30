@@ -2,394 +2,156 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ARENA PREMIUM</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Rate Monitor Asli</title>
     <style>
-        :root {
-            --primary: #4f46e5;
-            --success: #10b981;
-            --danger: #ef4444;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text-main: #1e293b;
-            --text-sub: #64748b;
-            --radius: 16px;
-        }
-
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        body {
-            background-color: var(--bg);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            margin: 0; padding: 0;
-            overflow-x: hidden;
-        }
-
-        /* --- LOADING ANIMATION --- */
-        #loader {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg); z-index: 9999; display: flex;
-            justify-content: center; align-items: center; flex-direction: column;
-            transition: opacity 0.5s ease;
-        }
-        .spinner {
-            width: 50px; height: 50px; border: 5px solid #e2e8f0;
-            border-top-color: var(--primary); border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        .header {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            padding: 15px 20px;
-            display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; z-index: 100;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-        }
-
-        .menu-icon {
-            width: 30px; height: 30px; display: flex; flex-direction: column; 
-            justify-content: center; gap: 6px; cursor: pointer;
-        }
-        .menu-icon span { height: 2px; width: 100%; background: var(--text-main); border-radius: 2px; transition: 0.3s; }
-
-        .brand { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -0.5px; }
-
-        .sidebar {
-            position: fixed; top: 0; left: -100%; width: 300px; height: 100%;
-            background: var(--card); z-index: 1000; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            padding: 40px 24px; box-shadow: 25px 0 50px rgba(0,0,0,0.1);
-        }
-        .sidebar.active { left: 0; }
-        .sidebar-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.3); backdrop-filter: blur(4px);
-            display: none; z-index: 999; animation: fadeIn 0.3s;
-        }
-
-        .menu-list { display: flex; flex-direction: column; gap: 10px; margin-top: 30px; }
-        .menu-btn {
-            background: #f1f5f9; border: none; padding: 16px; border-radius: 12px;
-            text-align: left; font-weight: 600; color: var(--text-main);
-            cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.2s;
-        }
-
-        .container { padding: 20px; max-width: 500px; margin: auto; animation: slideIn 0.6s; }
-
-        .balance-card {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            padding: 30px; border-radius: 24px; color: #fff;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); margin-bottom: 24px;
-        }
-        .amount-main { font-family: 'Outfit', sans-serif; font-size: 34px; margin-top: 10px; font-weight: 700; }
-
-        .action-card {
-            background: var(--card); padding: 20px; border-radius: var(--radius);
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 24px;
-        }
-        input {
-            width: 100%; border: 2px solid #f1f5f9; background: #f8fafc;
-            padding: 14px; border-radius: 12px; font-size: 16px; outline: none;
-            font-weight: 600; text-align: center; transition: 0.3s; color: var(--text-main);
-            margin-bottom: 10px;
-        }
-        input:focus { border-color: var(--primary); background: #fff; }
-
-        .btn-primary {
-            width: 100%; background: var(--primary); color: #fff; border: none;
-            padding: 16px; border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer;
-        }
-
-        .laga-item {
-            background: var(--card); border-radius: var(--radius); padding: 20px;
-            margin-bottom: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
-        }
-        .laga-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .laga-id { font-size: 11px; font-weight: 800; color: var(--primary); background: #eef2ff; padding: 6px 12px; border-radius: 20px; }
-        .laga-val { font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 15px;}
-
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn-opt { padding: 12px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; font-size: 12px; }
-        .btn-win { background: var(--success); color: #fff; }
-        .btn-lose { background: #fee2e2; color: var(--danger); }
-        .btn-link { 
-            grid-column: span 2; background: #e0e7ff; color: var(--primary); 
-            margin-bottom: 10px; text-decoration: none; display: flex; 
-            justify-content: center; align-items: center; gap: 5px;
-        }
-
-        .modal-wrap {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px);
-            display: none; justify-content: center; align-items: flex-end; z-index: 2000;
-        }
-        .modal-body {
-            background: #fff; width: 100%; max-width: 500px; padding: 30px;
-            border-top-left-radius: 30px; border-top-right-radius: 30px;
-            animation: slideUp 0.4s;
+        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; margin: 0; padding: 20px; }
+        .container { max-width: 400px; margin: auto; }
+        #video { display: none; } /* Sembunyikan preview kamera */
+        #canvas { display: none; } 
+        
+        .bpm-display {
+            font-size: 5rem;
+            font-weight: bold;
+            color: #ff4757;
+            margin: 20px 0;
+            text-shadow: 0 0 20px rgba(255, 71, 87, 0.5);
         }
         
-        .log-row { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f1f5f9; }
-        .btn-del-history { background: #fee2e2; color: var(--danger); border: none; padding: 6px 10px; border-radius: 8px; font-weight: bold; font-size: 10px; }
+        .guide {
+            background: #2f3542;
+            padding: 15px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
 
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .status-dot {
+            height: 15px;
+            width: 15px;
+            background-color: #bbb;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .active { background-color: #ff4757; animation: blink 1s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        button {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
 
-    <div id="loader">
-        <div class="spinner"></div>
-        <div style="margin-top: 15px; font-family: 'Outfit', sans-serif; font-weight: 700;">MEMUAT ARENA...</div>
+<div class="container">
+    <h2>Heart Rate Monitor</h2>
+    <div class="guide" id="instruction">
+        Tekan tombol di bawah dan tempelkan ujung jari Anda hingga <b>menutupi seluruh lensa kamera belakang</b>.
     </div>
 
-    <div id="overlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
+    <div class="bpm-display" id="bpm">--</div>
+    <div>BPM</div>
 
-    <div id="sidebar" class="sidebar">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div class="brand">Control Panel</div>
-            <div onclick="toggleMenu()" style="font-weight: 800; cursor: pointer;">CLOSE</div>
-        </div>
-        <div class="menu-list">
-            <button class="menu-btn" onclick="openAction('EDIT')">Edit Saldo Utama</button>
-            <button class="menu-btn" onclick="openAction('PLUS')">Tambah Saldo (+)</button>
-            <button class="menu-btn" onclick="openAction('MIN')">Kurangi Saldo (-)</button>
-            <button class="menu-btn" onclick="copyLog()">Copy Rekap Data</button>
-            <button class="menu-btn" onclick="openDeleteHistory()">Hapus Riwayat</button>
-            <button class="menu-btn" style="color: var(--danger);" onclick="clearData()">Reset System</button>
-        </div>
+    <div style="margin-top: 20px;">
+        <span id="dot" class="status-dot"></span>
+        <span id="statusText">Sensor Mati</span>
     </div>
 
-    <header class="header">
-        <div class="menu-icon" onclick="toggleMenu()"><span></span><span></span><span></span></div>
-        <div class="brand">ARENA SYSTEM</div>
-        <div style="width: 30px;"></div>
-    </header>
+    <button id="startBtn">Mulai Sensor</button>
 
-    <div class="container">
-        <div class="balance-card">
-            <div style="font-size: 12px; color: #94a3b8;">Total Saldo</div>
-            <div id="saldoDisplay" class="amount-main">Rp 0</div>
-        </div>
-
-        <div class="action-card">
-            <input type="text" id="nameInput" placeholder="Nama Laga (Cth: Laga 1)">
-            <input type="number" id="pikInput" placeholder="Nominal Pik">
-            <input type="text" id="linkInput" placeholder="Link Laga (Opsional)">
-            <button class="btn-primary" onclick="addLaga()">PROSES LAGA BARU</button>
-        </div>
-
-        <div id="lagaContainer"></div>
-
-        <div style="margin-top: 30px;">
-            <div style="font-size: 12px; color: #94a3b8; font-weight: 600;">RIWAYAT AKTIVITAS</div>
-            <div id="historyBox"></div>
-        </div>
-    </div>
-
-    <div id="modalWrap" class="modal-wrap">
-        <div class="modal-body">
-            <div id="modalTitle" style="font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 10px;">TITLE</div>
-            <input type="number" id="modalInput" style="margin-bottom: 20px;">
-            <div class="btn-group">
-                <button class="btn-opt" style="background: #f1f5f9;" onclick="closeModal()">BATAL</button>
-                <button id="modalConfirmBtn" class="btn-opt btn-win" style="background: var(--primary);">SIMPAN</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="historyModalWrap" class="modal-wrap">
-        <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
-            <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 20px;">
-                <div style="font-weight: 800; color: var(--danger);">HAPUS RIWAYAT</div>
-                <div onclick="closeHistoryModal()" style="font-weight: 800; cursor: pointer; font-size:12px;">TUTUP</div>
-            </div>
-            <div id="historyDeleteList"></div>
-        </div>
-    </div>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas" width="100" height="100"></canvas>
+</div>
 
 <script>
-    let state = { saldo: 0, activeLagas: [], logs: [] };
-    let currentIdx = null;
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const bpmDisplay = document.getElementById('bpm');
+    const startBtn = document.getElementById('startBtn');
+    const statusText = document.getElementById('statusText');
+    const dot = document.getElementById('dot');
 
-    window.onload = () => {
-        const saved = localStorage.getItem('arena_v8_links');
-        if (saved) { state = JSON.parse(saved); render(); }
-        setTimeout(() => { 
-            document.getElementById('loader').style.opacity = '0';
-            setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 500);
-        }, 800);
-    };
+    let isMeasuring = false;
+    let heartRates = [];
+    let lastValue = 0;
+    let peaks = [];
 
-    function save() { localStorage.setItem('arena_v8_links', JSON.stringify(state)); }
-
-    function toggleMenu() {
-        document.getElementById('sidebar').classList.toggle('active');
-        const overlay = document.getElementById('overlay');
-        overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
-    }
-
-    function render() {
-        document.getElementById('saldoDisplay').innerText = "Rp " + state.saldo.toLocaleString('id-ID');
-        const container = document.getElementById('lagaContainer');
-        container.innerHTML = '';
-
-        state.activeLagas.forEach((laga, i) => {
-            const div = document.createElement('div');
-            div.className = 'laga-item';
-            div.innerHTML = `
-                <div class="laga-info">
-                    <span class="laga-id">${laga.name}</span>
-                    <span onclick="cancelLaga(${i})" style="color: var(--text-sub); font-size: 11px; cursor: pointer; font-weight: 700;">BATAL</span>
-                </div>
-                <div class="laga-val">Rp ${laga.pik.toLocaleString('id-ID')}</div>
-                ${laga.link ? `<a href="${laga.link}" target="_blank" class="btn-opt btn-link">🔗 BUKA LINK LAGA</a>` : ''}
-                <div class="btn-group">
-                    <button class="btn-opt btn-win" onclick="openWinModal(${i})">REPORT WIN</button>
-                    <button class="btn-opt btn-lose" onclick="processLose(${i})">REPORT LOSE</button>
-                </div>
-            `;
-            container.appendChild(div);
-        });
-
-        const hist = document.getElementById('historyBox');
-        hist.innerHTML = '';
-        state.logs.forEach(l => {
-            const isWin = l.res === 'WIN';
-            hist.innerHTML += `
-                <div class="log-row">
-                    <div>
-                        <div style="font-size: 10px; color: #94a3b8;">${l.time}</div>
-                        <div style="font-weight: 700; color: ${isWin ? 'var(--success)' : (l.res === 'LOSE' ? 'var(--danger)' : 'var(--text-main)')}">
-                            ${l.res} - ${l.name}
-                        </div>
-                    </div>
-                    <div style="text-align: right;">
-                        <div style="font-weight: 700;">${isWin?'+':(l.res==='LOSE'?'-':'')}${l.amt.toLocaleString('id-ID')}</div>
-                    </div>
-                </div>
-            `;
-        });
-    }
-
-    function addLaga() {
-        const name = document.getElementById('nameInput').value.trim() || `Laga #${state.activeLagas.length + 1}`;
-        const pik = parseInt(document.getElementById('pikInput').value);
-        const link = document.getElementById('linkInput').value.trim();
-
-        if(!pik) return;
+    startBtn.addEventListener('click', async () => {
+        if (isMeasuring) return;
         
-        state.saldo -= pik; // Saldo langsung berkurang
-        state.activeLagas.push({ name, pik, link });
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }, // Gunakan kamera belakang
+                audio: false
+            });
+            
+            video.srcObject = stream;
+            isMeasuring = true;
+            startBtn.style.display = 'none';
+            statusText.innerText = "Menganalisa Aliran Darah...";
+            dot.classList.add('active');
+
+            processFrame();
+        } catch (err) {
+            alert("Gagal mengakses kamera. Pastikan menggunakan HTTPS dan memberi izin kamera.");
+        }
+    });
+
+    function processFrame() {
+        if (!isMeasuring) return;
+
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+
+        let rSum = 0;
+        // Ambil rata-rata nilai warna merah (Red channel)
+        for (let i = 0; i < data.length; i += 4) {
+            rSum += data[i];
+        }
         
-        document.getElementById('nameInput').value = '';
-        document.getElementById('pikInput').value = '';
-        document.getElementById('linkInput').value = '';
-        save(); render();
+        const rAvg = rSum / (data.length / 4);
+        analyzePulse(rAvg);
+
+        requestAnimationFrame(processFrame);
     }
 
-    function cancelLaga(i) {
-        if(confirm("Batalkan laga? Saldo akan dikembalikan.")) {
-            state.saldo += state.activeLagas[i].pik;
-            state.activeLagas.splice(i, 1);
-            save(); render();
+    function analyzePulse(val) {
+        // Filter sederhana untuk mendeteksi puncak detak
+        if (val > lastValue && val > 150) { // Angka 150 asumsi jari menutupi kamera & terkena cahaya/flash
+            const now = Date.now();
+            if (peaks.length === 0 || now - peaks[peaks.length - 1] > 400) { // Limit 400ms antar detak (max 150 BPM)
+                peaks.push(now);
+            }
+        }
+        lastValue = val;
+
+        // Hitung BPM setiap 5 detik data terkumpul
+        if (peaks.length > 5) {
+            const first = peaks[0];
+            const last = peaks[peaks.length - 1];
+            const diff = (last - first) / 1000; // detik
+            const bpm = Math.round((peaks.length / diff) * 60);
+            
+            if (bpm > 40 && bpm < 180) {
+                bpmDisplay.innerText = bpm;
+            }
+            
+            // Reset periodik agar data tetap baru
+            if (peaks.length > 20) peaks.shift();
         }
     }
-
-    function openWinModal(i) {
-        currentIdx = i;
-        const pik = state.activeLagas[i].pik;
-        document.getElementById('modalWrap').style.display = 'flex';
-        document.getElementById('modalTitle').innerText = `HASIL MENANG (${state.activeLagas[i].name})`;
-        document.getElementById('modalInput').value = pik * 2;
-        document.getElementById('modalConfirmBtn').onclick = () => {
-            const val = parseInt(document.getElementById('modalInput').value);
-            state.saldo += val;
-            addLog('WIN', pik, val, state.activeLagas[currentIdx].name, state.activeLagas[currentIdx].link);
-            state.activeLagas.splice(currentIdx, 1);
-            closeModal(); save(); render();
-        };
-    }
-
-    function processLose(i) {
-        const laga = state.activeLagas[i];
-        addLog('LOSE', laga.pik, laga.pik, laga.name, laga.link);
-        state.activeLagas.splice(i, 1);
-        save(); render();
-    }
-
-    function addLog(res, pik, amt, name, link = '') {
-        const now = new Date();
-        state.logs.unshift({
-            time: now.getHours().toString().padStart(2,'0')+":"+now.getMinutes().toString().padStart(2,'0'),
-            res, pik, amt, name, link
-        });
-    }
-
-    function openDeleteHistory() {
-        toggleMenu();
-        renderDeleteHistory();
-        document.getElementById('historyModalWrap').style.display = 'flex';
-    }
-
-    function renderDeleteHistory() {
-        const list = document.getElementById('historyDeleteList');
-        list.innerHTML = '';
-        state.logs.forEach((l, i) => {
-            list.innerHTML += `
-                <div class="log-row">
-                    <div style="font-size: 13px;"><b>${l.res}</b> - ${l.name}</div>
-                    <button class="btn-del-history" onclick="deleteSingleLog(${i})">HAPUS</button>
-                </div>
-            `;
-        });
-    }
-
-    function deleteSingleLog(i) {
-        state.logs.splice(i, 1);
-        save(); render(); renderDeleteHistory();
-    }
-
-    function openAction(mode) {
-        toggleMenu();
-        document.getElementById('modalWrap').style.display = 'flex';
-        const input = document.getElementById('modalInput');
-        input.value = '';
-        if(mode === 'EDIT') {
-            input.value = state.saldo;
-            document.getElementById('modalConfirmBtn').onclick = () => {
-                state.saldo = parseInt(input.value) || 0;
-                closeModal(); save(); render();
-            };
-        } else if(mode === 'PLUS') {
-            document.getElementById('modalConfirmBtn').onclick = () => {
-                state.saldo += parseInt(input.value) || 0;
-                closeModal(); save(); render();
-            };
-        } else if(mode === 'MIN') {
-            document.getElementById('modalConfirmBtn').onclick = () => {
-                state.saldo -= parseInt(input.value) || 0;
-                closeModal(); save(); render();
-            };
-        }
-    }
-
-    function closeModal() { document.getElementById('modalWrap').style.display = 'none'; }
-    function closeHistoryModal() { document.getElementById('historyModalWrap').style.display = 'none'; }
-
-    function copyLog() {
-        let txt = `REKAP ARENA | SALDO: Rp ${state.saldo.toLocaleString('id-ID')}\n\n`;
-        state.logs.forEach(l => {
-            const op = l.res === 'WIN' ? '+' : '-';
-            txt += `[${l.time}] ${l.res} - ${l.name} | ${op}${l.amt.toLocaleString('id-ID')}${l.link ? '\nLink: ' + l.link : ''}\n---\n`;
-        });
-        navigator.clipboard.writeText(txt); alert("Rekap disalin!");
-    }
-
-    function clearData() { if(confirm("Reset semua?")) { localStorage.clear(); location.reload(); } }
 </script>
+
 </body>
 </html>
